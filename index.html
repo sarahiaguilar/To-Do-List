@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Title</title>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="format-detection" content="telephone=no" />
+	<meta name="msapplication-tap-highlight" content="no" />
+	<meta name="viewport" content="user-scalable=no, initial-scale=1, 
+		maximum-scale=1, minimum-scale=1, width=device-width" />
+	<meta http-equiv="Content-Security-Policy" 
+		content="default-src * gap://ready file:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'" />
+
+	<!-- Arquitecture -->
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+	<link href="css/style.css" rel="stylesheet">
+	<script src="js/jquery.min.js"></script>
+	<script src="js/bootstrap.min.js"></script>
+	<script src="js/scripts.js"></script>
+  </head>
+  <body>
+
+    <div class="container-fluid">
+	
+		<br>
+	
+		<div class="row form-group">
+			<label class="col-md-3 control-label text-right" for="Nombre">Nombre:</label>  
+			<div class="col-md-8">
+				<input id="Nombre" name="Nombre" type="text" placeholder="Nobre de la tarea" class="form-control input-md">
+			</div>
+			<div class="col-md-1">&nbsp;</div>
+		</div>
+		
+		<div class="row form-group">
+			<label class="col-md-3 control-label text-right" for="Descr">Descripci&oacute;n:</label>  
+			<div class="col-md-8">
+				<input id="Descr" name="Descr" type="text" placeholder="Descripción de la tarea" class="form-control input-md">
+			</div>
+			<div class="col-md-1">&nbsp;</div>
+		</div>
+		
+		<div class="row form-group">
+			<label class="col-md-3 control-label text-right" for="F_Entrega">Fecha de entrega:</label>  
+			<div class="col-md-8">
+				<input id="F_Entrega" name="F_Entrega" type="text" placeholder="Fecha de término de la tarea" class="form-control input-md">
+			</div>
+			<div class="col-md-1">&nbsp;</div>
+		</div>
+		
+		<div class="row form-group">
+			<label class="col-md-3 control-label text-right" for="b_ins">&nbsp;</label>  
+			<div class="col-md-8">
+				<button id="b_ins" name="b_ins" type="button" class="input-md btn btn-success">Insertar</button>
+				<div id="mssgs01"></div>
+			</div>
+			<div class="col-md-1">&nbsp;</div>
+		</div>
+		
+		<div class="clearfix"></div>
+		<br>
+	
+		<div class="row">
+			<div class="col-md-1">&nbsp;</div>
+			<div class="col-md-4">
+				<h2 class="text-warning">
+					No terminadas
+				</h2>
+				<div id="mssgs02"></div>
+				<div id='d_noterm'></div>
+			</div>
+			<div class="col-md-2">&nbsp;</div>
+			<div class="col-md-4">
+				<h2 class="text-success">
+					Terminadas
+				</h2>
+				<div id='d_term'></div>
+			</div>
+			<div class="col-md-1">&nbsp;</div>
+		</div>
+		
+		<br>
+		<br>
+		
+	</div>
+
+	<script>
+		function prShowMssg(pID, pType, pTitle, pMssg)
+		{
+			$("#mssgs" + pID).show();
+			$("#mssgs" + pID).html(
+				'<br><br><div class="alert alert-' + pType + ' fade in"><a href="#" class="close" data-dismiss="alert">&times;</a><strong>' + pTitle + ': </strong>' + pMssg + '</div>'
+			);
+			$("#mssgs" + pID).delay(5000).fadeOut();
+		} // prShowMssg
+	
+		function prTasks()
+		{
+			if (navigator.onLine == true) {
+		
+				$.ajax({
+					data:
+					{
+						action:	'act_tareas'
+					},
+					url:		"srvBO.php",
+					type:		'POST',
+					cache:		false,
+					
+					success:	function(data, status, xhr) {
+						//console.log(data);
+						if ( (status == 'success') && (data.length != 0) ) {
+							lArr= jQuery.parseJSON(data);
+							switch (lArr.res) {
+								case -1:
+									prShowMssg('01', 'danger', 'Error', 'Comando desconocido.');
+									break;
+								case 1:
+									if (lArr.noterm) {
+										var lHtml = '<div class="row">';
+										lHtml += '<div class="col-md-3"><b>Nombre</b></div>';
+										lHtml += '<div class="col-md-3"><b>Descr</b></div>';
+										lHtml += '<div class="col-md-3"><b>F_Entrega</b></div>';
+										lHtml += '<div class="col-md-3"><b>Acciones</b></div>';
+										lHtml += '</div>';
+										var lIdx = 0;
+										$.each(lArr.noterm, function(key, val) {
+											var lReng = '<div class="row" style="min-height:25px;';
+											if (lIdx % 2 == 0) 
+												lReng += "background-color:#404040;";
+											lReng += '">';
+											lReng += '<div class="col-md-3">' + val.Nombre + '</div>';
+											lReng += '<div class="col-md-3">' + val.Descr + '</div>';
+											lReng += '<div class="col-md-3">' + val.F_Entrega + '</div>';
+											lReng += '<div class="col-md-3"><a href="#" onclick="prTerminate(' + val.ID + ');" class="btn btn-success btn-xs">Terminar</a></div>';
+											lReng += '</div>';
+											lHtml += lReng;
+											lIdx++;
+										});
+										$('#d_noterm').html(lHtml);
+									} else {
+										var lHtml = '<div class="row">';
+										lHtml += '<div class="col-md-12"><b>No hay tareas.</b></div>';
+										lHtml += '</div>';
+										$('#d_noterm').html(lHtml);
+									}
+									if (lArr.term) {
+										var lHtml = '<div class="row">';
+										lHtml += '<div class="col-md-3"><b>Nombre</b></div>';
+										lHtml += '<div class="col-md-3"><b>Descr</b></div>';
+										lHtml += '<div class="col-md-3"><b>F_Entrega</b></div>';
+										lHtml += '<div class="col-md-3"><b>ID</b></div>';
+										lHtml += '</div>';
+										var lIdx = 0;
+										$.each(lArr.term, function(key, val) {
+											var lReng = '<div class="row" style="min-height:25px;';
+											if (lIdx % 2 == 0) 
+												lReng += "background-color:#404040;";
+											lReng += '">';
+											lReng += '<div class="col-md-3">' + val.Nombre + '</div>';
+											lReng += '<div class="col-md-3">' + val.Descr + '</div>';
+											lReng += '<div class="col-md-3">' + val.F_Entrega + '</div>';
+											lReng += '<div class="col-md-3">' + val.ID + '</div>';
+											lReng += '</div>';
+											lHtml += lReng;
+											lIdx++;
+										});
+										$('#d_term').html(lHtml);
+									} else {
+										var lHtml = '<div class="row">';
+										lHtml += '<div class="col-md-12"><b>No hay tareas.</b></div>';
+										lHtml += '</div>';
+										$('#d_term').html(lHtml);
+									}
+									break;
+							}
+						}
+					}
+				});
+				
+			} else {
+				prShowMssg('01', 'danger', 'Error', 'No hay comunicación con el server.');
+			}
+		} // prTasks
+	
+		function prInsert()
+		{
+			if (navigator.onLine == true) {
+		
+				$.ajax({
+					data:
+					{
+						action:		'act_instarea',
+						Nombre:		$('#Nombre').val(),
+						Descr:		$('#Descr').val(),
+						F_Entrega:	$('#F_Entrega').val()
+					},
+					url:		"srvBO.php",
+					type:		'POST',
+					cache:		false,
+					
+					success:	function(data, status, xhr) {
+						//console.log(data);
+						if ( (status == 'success') && (data.length != 0) ) {
+							lArr= jQuery.parseJSON(data);
+							switch (lArr.res) {
+								case -1:
+									prShowMssg('01', 'danger', 'Error', 'Comando desconocido.');
+									break;
+								case -2:
+									prShowMssg('01', 'danger', 'Error', 'Parámetro vacío: ' + lArr.param);
+									break;
+								case 0:
+									prShowMssg('01', 'danger', 'Error', 'Operación no exitosa.');
+									break;
+								case 1:
+									prShowMssg('01', 'success', 'Información:', 'Operación exitosa.');
+									prTasks();
+									break;
+							}
+						}
+					}
+				});
+				
+			} else {
+				prShowMssg('01', 'danger', 'Error', 'No hay comunicación con el server.');
+			}
+		} // prInsert
+		
+		function prTerminate(pID)
+		{
+			if (navigator.onLine == true) {
+		
+				$.ajax({
+					data:
+					{
+						action:	'act_termtarea',
+						ID:		pID
+					},
+					url:		"srvBO.php",
+					type:		'POST',
+					cache:		false,
+					
+					success:	function(data, status, xhr) {
+						console.log(data);
+						if ( (status == 'success') && (data.length != 0) ) {
+							lArr= jQuery.parseJSON(data);
+							switch (lArr.res) {
+								case -1:
+									prShowMssg('02', 'danger', 'Error', 'Comando desconocido.');
+									break;
+								case -2:
+									prShowMssg('02', 'danger', 'Error', 'Parámetro vacío: ' + lArr.param);
+									break;
+								case 0:
+									prShowMssg('02', 'danger', 'Error', 'Operación no exitosa.');
+									break;
+								case 1:
+									prShowMssg('02', 'success', 'Información:', 'Operación exitosa.');
+									prTasks();
+									break;
+							}
+						}
+					}
+				});
+				
+			} else {
+				prShowMssg('02', 'danger', 'Error', 'No hay comunicación con el server.');
+			}
+		} // prTerminate
+		
+		$( document ).ready(function() {
+			
+			$('#b_ins').click(function(){
+				prInsert();
+			});
+			
+			prTasks();
+			
+			$('#Nombre').focus();
+		});
+	</script>
+	
+  </body>
+</html>
